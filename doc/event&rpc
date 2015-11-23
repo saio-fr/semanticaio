@@ -4,7 +4,7 @@
     return:
       {status: 'new' | 'loading' | 'ready'}
 
-  - semanticaio.training.state.get
+  - semanticaio.trainer.state.get
     return:
       {status: 'new' | 'loading' | 'ready' | 'training' | 'committing'}
 
