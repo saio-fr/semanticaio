@@ -1,0 +1,174 @@
+** controller **
+  RPC:
+  - semanticaio.app.state.get
+    return:
+      {status: 'loading' | 'ready'}
+
+  - semanticaio.training.state.get
+    return:
+      {status: 'loading' | 'idle' | 'training' | 'committing'}
+
+  - semanticaio.analyze
+    kwargs:
+      {question: string}
+    return: {
+      tags: {<tagName>: boolean},
+      classes: {<className>: <label>},
+      match: { question: string, distance: float}
+    }
+
+  Subscribed Events:
+  - semanticaio.app.load
+  - semanticaio.trainer.load
+  - semanticaio.trainer.start
+  - semanticaio.trainer.stop
+  - semanticaio.trainer.commit
+
+  (& all events published by other components)
+
+  Published Events:
+  - semanticaio.app.state.loading
+  - semanticaio.app.state.loaded
+  - semanticaio.trainer.state.loading
+  - semanticaio.trainer.state.loaded
+  - semanticaio.trainer.state.started
+  - semanticaio.trainer.state.stopped
+  - semanticaio.trainer.state.committing
+  - semanticaio.trainer.state.committed
+
+
+** database **
+  RPC:
+  - semanticaio.db.get
+    kwargs:
+      {id: int}
+    return:
+      {question: Question}
+
+  - semanticaio.db.all.get
+    kwargs: {
+      correctOnly: boolean (optional, default false)
+      matchableOnly: boolean (optional, false => all questions matchable or not, default false)
+    }
+    return:
+      {questions: [Question]}
+
+  - semanticaio.db.batch.get
+    kwargs: {
+      size: int
+      correctOnly: boolean (optional)
+      matchableOnly: boolean (optional)
+    }
+    return:
+      {questions: [Question]} (random batch)
+
+  - semanticaio.db.set
+    kwargs: {
+      id: int
+      <column to set>: <value>
+    }
+
+  - semanticaio.db.add
+    kwargs <=> Question
+
+  - semanticaio.db.remove
+    kwargs: {id: int}
+
+** encoder **
+  RPC:
+  - semanticaio.encoder.load
+
+  - semanticaio.encoder.encode
+    kwargs:
+      question: string (optional)
+      questions: [string] (optional)
+      decode: boolean
+    return:
+      if kwargs.question:
+        encoded: [float]
+        decoded: string (if kwargs.decode)
+      if kwargs.questions:
+        encoded: [[float]]
+        decoded: [string] (if kwargs.decode)
+
+** encoder trainer **
+  RPC:
+  - semanticaio.encoder.trainer.save
+  - semanticaio.encoder.trainer.stats.get
+    return
+      time: training duration in seconds
+      loss: float (last batch loss)
+      accuracy: float (last batch accuracy)
+      nQuestions: int
+
+  Subscribed Events:
+  - semanticaio.encoder.trainer.start
+    kwargs:
+      nQuestions: int (optional), stop after nQuestions trained
+      objectiveAccuracy: float (optional), stop after objectiveAccuracy reached
+      time: int (optional), stop after a number of seconds
+
+  - semanticaio.encoder.trainer.stop
+
+  Published Events:
+  - semanticaio.encoder.trainer.started
+
+  - semanticaio.encoder.trainer.stopped
+    kwargs:
+      time: training duration in seconds
+      loss: float (last batch loss)
+      accuracy: float (last batch accuracy)
+      nQuestions: int
+
+** tagger **
+  RPC:
+  - semanticaio.tagger.load
+
+  - semanticaio.tagger.tag
+    kwargs:
+      question: [float]
+    return:
+      <tag>: boolean
+
+** tagger trainer ** (full db one-hot training because svm used)
+  RPC:
+  - semanticaio.tagger.trainer.load
+
+  - semanticaio.tagger.trainer.save
+
+  Subscribed Events:
+  - semanticaio.tagger.trainer.train
+
+  Published Events:
+  - semanticaio.tagger.trainer.trained
+
+** classifier **
+  RPC:
+  - semanticaio.classifier.load
+
+  - semanticaio.classifier.classify
+    kwargs:
+      question: [float]
+    return:
+      <class>: <label>
+
+** classifier trainer **
+  RPC:
+  - semanticaio.classifier.trainer.load
+
+  - semanticaio.classifier.trainer.save
+
+  Subscribed Events:
+  - semanticaio.classifier.trainer.train
+
+  Published Events:
+  - semanticaio.classifier.trainer.trained
+
+** matcher **
+  RPC:
+  - semanticaio.matcher.match
+    kwargs:
+      question: [float]
+    return:
+      id: int of closest question
+      distance: float

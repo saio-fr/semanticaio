@@ -1,0 +1,22 @@
+TODO: 2 interfaces
+
+** Front **
+- input: question
+- output: tags, class labels & match
+(see event&rpc doc -> controller -> semanticaio.analyze)
+
+** back **
+- print front status: controller -> semanticaio.app.state.get & state events
+- print training status: controller -> semanticaio.trainer.state.get & state events
+- boutons load app, load trainer, start/stop training, commit
+- db handling (view, add, rm, update): see event&rpc doc -> database
+
+Tech notes:
+- Pour les events & rpc c'est du wamp, tu peux utiliser autobahn v2 directement ou l'interface wsocket que j'ai codée
+- pour la config des classes et tags utilise config/semantic.json
+- pour la config de crossbar, ce sera:
+    - realm: semanticaio
+    & pas d'authentification
+- si tu peux faire un fichier de config qui contient la config pour l'host crossbar & le path vers semantic.json,
+  ce serait cool
+- le modèle pour la db est documenté dans model

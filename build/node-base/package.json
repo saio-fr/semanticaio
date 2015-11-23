@@ -1,0 +1,13 @@
+{
+  "name": "service-base",
+  "dependencies": {
+    "underscore": "*",
+    "when": "*",
+    "@saio/service-runner": "*",
+    "@saio/wsocket-component": "*",
+    "@saio/db-component": "*"
+  },
+  "scripts": {
+    "start": "service-runner main.js"
+  }
+}

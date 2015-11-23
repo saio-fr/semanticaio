@@ -1,0 +1,8 @@
+Question:
+  id: string
+  sentence: string
+  correctFormId: string (id) or null
+  <tag>: boolean
+  <class>: string (class value)
+  representation: array (json)
+  matchable: boolean

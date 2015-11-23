@@ -1,0 +1,88 @@
+** ARCHITECTURE **
+- front-office web:
+    - input: question
+    - output: encoded then decoded, tags, matching
+
+- back-office web:
+    - training start / pause / save / stop (conditional stop, ie accuracy threshold)
+        - for each part: ie train all, tagger only, one tag only
+    - front update (ie restart) -> note need retraining tagger if encoder updated
+    - training monitoring (accuracy, timing)
+    - current component score monitoring
+    - tag add/rm/rename -> static better
+    - data view/add/rm/update
+
+    - start/stop service
+    - commit training (=> need check if encoder changed or not)
+    - evaluate training
+
+- database:
+    Questions:
+      id: string
+      sentence: string
+      correctFormId: string (id) or null
+      <tag>: boolean
+      <class>: string (class value)
+      representation: array (json maybe)
+      matchable: boolean
+
+    RPC:
+      random batch (with option to select a particular not null tag, or several)
+      random ordered full read ?
+      add/get(id/all)/set/remove(id)
+
+- crossbar:
+
+- encoder (+ decoder):
+    weight paths:
+      encoder: (/opt/service/)data/encoder/encoderWeights
+      decoder: (/opt/service/)data/encoder/decoderWeights
+    RPC:
+      encode/decode (unique/batch)
+      (re)load model
+      get status
+    Events:
+      status update (loading/ready)
+
+- encoder trainer:
+    RPC:
+      train start/stop
+      load/save
+      get status
+    Events:
+      status update (idle/loading/training/saving)
+
+- tagger:
+    RPC:
+      tag (unique/batch)
+      (re)load model(tag name)
+      get status
+    Events:
+      status update (loading/ready)
+
+- tagger trainer:
+    RPC:
+      train for each tag (emit event when done)
+      load/save
+      get status
+    Events:
+      status update (idle/loading/training/saving)
+
+- matcher:
+
+- controller:
+    RPC:
+      full analysis (encode, tag, match)
+      train start/stop/commit
+      - commit (after encoder training stopped)
+        => train classifier & tagger
+        => save & reload encoder/classifier/tagger
+        => encode all db for matcher
+
+** GLOBAL NOTES **
+- pas de distinction entreprise, global etc
+- tags & feature dim static
+
+** TODO **
+- load/save db content -> use docker volume: /var/lib/postgresql/data
+- docker volume for weights -> /opt/data/encoder or tagger
