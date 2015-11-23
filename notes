@@ -86,3 +86,4 @@
 ** TODO **
 - load/save db content -> use docker volume: /var/lib/postgresql/data
 - docker volume for weights -> /opt/data/encoder or tagger
+- init case: en particulier pour le matcher (no representation?!, init with zeros?)

@@ -2,11 +2,19 @@
   RPC:
   - semanticaio.app.state.get
     return:
-      {status: 'loading' | 'ready'}
+      {status: 'new' | 'loading' | 'ready'}
 
   - semanticaio.training.state.get
     return:
-      {status: 'loading' | 'idle' | 'training' | 'committing'}
+      {status: 'new' | 'loading' | 'ready' | 'training' | 'committing'}
+
+  - semanticaio.config.get
+    return: {
+      tags: [string],
+      classes: {
+        <classificationName>: [string]
+      }
+    }
 
   - semanticaio.analyze
     kwargs:
@@ -19,7 +27,7 @@
 
   Subscribed Events:
   - semanticaio.app.load
-  - semanticaio.trainer.load
+  - semanticaio.trainer.load (load only possible if trainer state is 'new' or 'idle')
   - semanticaio.trainer.start
   - semanticaio.trainer.stop
   - semanticaio.trainer.commit
@@ -93,7 +101,10 @@
 
 ** encoder trainer **
   RPC:
+  - semanticaio.encoder.trainer.load
+
   - semanticaio.encoder.trainer.save
+
   - semanticaio.encoder.trainer.stats.get
     return
       time: training duration in seconds
@@ -166,6 +177,8 @@
 
 ** matcher **
   RPC:
+  - semanticaio.matcher.load
+
   - semanticaio.matcher.match
     kwargs:
       question: [float]
