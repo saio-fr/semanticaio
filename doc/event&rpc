@@ -6,7 +6,7 @@
 
   - semanticaio.trainer.state.get
     return:
-      {status: 'new' | 'loading' | 'ready' | 'training' | 'committing'}
+      {status: 'new' | 'loading' | 'ready' | 'starting' | 'training' | 'stopping' | 'committing'}
 
   - semanticaio.config.get
     return: {
@@ -27,10 +27,10 @@
 
   Subscribed Events:
   - semanticaio.app.load
-  - semanticaio.trainer.load (load only possible if trainer state is 'new' or 'idle')
+  - semanticaio.trainer.load (load only possible if trainer state is 'new' or 'ready')
   - semanticaio.trainer.start
   - semanticaio.trainer.stop
-  - semanticaio.trainer.commit
+  - semanticaio.trainer.commit (note: commit => reload app)
 
   (& all events published by other components)
 
@@ -39,7 +39,9 @@
   - semanticaio.app.state.loaded
   - semanticaio.trainer.state.loading
   - semanticaio.trainer.state.loaded
+  - semanticaio.trainer.state.starting
   - semanticaio.trainer.state.started
+  - semanticaio.trainer.state.stopping
   - semanticaio.trainer.state.stopped
   - semanticaio.trainer.state.committing
   - semanticaio.trainer.state.committed
@@ -105,19 +107,19 @@
 
   - semanticaio.encoder.trainer.save
 
-  - semanticaio.encoder.trainer.stats.get
+  (TODO later - semanticaio.encoder.trainer.stats.get
     return
       time: training duration in seconds
       loss: float (last batch loss)
       accuracy: float (last batch accuracy)
-      nQuestions: int
+      nQuestions: int)
 
   Subscribed Events:
   - semanticaio.encoder.trainer.start
-    kwargs:
+    (TODO later - kwargs:
       nQuestions: int (optional), stop after nQuestions trained
       objectiveAccuracy: float (optional), stop after objectiveAccuracy reached
-      time: int (optional), stop after a number of seconds
+      time: int (optional), stop after a number of seconds)
 
   - semanticaio.encoder.trainer.stop
 
@@ -125,11 +127,11 @@
   - semanticaio.encoder.trainer.started
 
   - semanticaio.encoder.trainer.stopped
-    kwargs:
+    (TODO later - kwargs:
       time: training duration in seconds
       loss: float (last batch loss)
       accuracy: float (last batch accuracy)
-      nQuestions: int
+      nQuestions: int)
 
 ** tagger **
   RPC:
@@ -141,7 +143,7 @@
     return:
       <tag>: boolean
 
-** tagger trainer ** (full db one-hot training because svm used)
+** tagger trainer ** (full db one-hot training over correct questions because svm used)
   RPC:
   - semanticaio.tagger.trainer.load
 
@@ -163,7 +165,7 @@
     return:
       <class>: <label>
 
-** classifier trainer **
+** classifier trainer ** (full db one-hot training over correct questions because svc used)
   RPC:
   - semanticaio.classifier.trainer.load
 

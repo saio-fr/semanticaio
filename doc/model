@@ -5,4 +5,4 @@ Question:
   <tag>: boolean
   <class>: string (class value)
   representation: array (json)
-  matchable: boolean
+  matchable: boolean (only correct questions can be matchable)
