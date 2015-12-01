@@ -1,5 +1,5 @@
 {
-  "name": "service-base",
+  "name": "node-service-base",
   "dependencies": {
     "underscore": "*",
     "when": "*",
@@ -8,6 +8,6 @@
     "@saio/db-component": "*"
   },
   "scripts": {
-    "start": "service-runner main.js"
+    "start": "service-runner ./main.js"
   }
 }

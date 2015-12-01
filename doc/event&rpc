@@ -2,11 +2,11 @@
   RPC:
   - semanticaio.app.state.get
     return:
-      {status: 'new' | 'loading' | 'ready'}
+      'new' | 'loading' | 'ready'
 
   - semanticaio.trainer.state.get
     return:
-      {status: 'new' | 'loading' | 'ready' | 'starting' | 'training' | 'stopping' | 'committing'}
+      'new' | 'loading' | 'ready' | 'starting' | 'training' | 'stopping' | 'committing'
 
   - semanticaio.config.get
     return: {
@@ -53,7 +53,7 @@
     kwargs:
       {id: int}
     return:
-      {question: Question}
+      Question
 
   - semanticaio.db.all.get
     kwargs: {
@@ -61,7 +61,7 @@
       matchableOnly: boolean (optional, false => all questions matchable or not, default false)
     }
     return:
-      {questions: [Question]}
+      [Question]
 
   - semanticaio.db.batch.get
     kwargs: {
@@ -70,7 +70,7 @@
       matchableOnly: boolean (optional)
     }
     return:
-      {questions: [Question]} (random batch)
+      [Question] (random batch)
 
   - semanticaio.db.set
     kwargs: {
@@ -78,11 +78,11 @@
       <column to set>: <value>
     }
 
-  - semanticaio.db.add
+  (TODO later - semanticaio.db.add
     kwargs <=> Question
 
   - semanticaio.db.remove
-    kwargs: {id: int}
+    kwargs: {id: int})
 
 ** encoder **
   RPC:

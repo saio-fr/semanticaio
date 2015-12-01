@@ -1,0 +1,23 @@
+1) install: (ok)
+- build node-base, python-base & crossbar
+
+2) start-env: (ok)
+- start crossbar, postgres & phppgadmin (with volumes & links)
+
+3) build: (ok)
+- build database, encoder (+trainer), classifier (+trainer), tagger (+trainer), matcher, controller
+
+4) start:
+- start containers of images of step 3 (with volumes & links)
+
+4) stop:
+- stop & rm containers of step 4 (& rm volumes)
+
+5) unbuild: (ok)
+- rm images of step 3
+
+6) stop-env: (ok)
+- stop & rm containers of step 2 (& rm volumes)
+
+7) uninstall: (ok)
+- rm images of step 1

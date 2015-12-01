@@ -2,58 +2,82 @@ var _ = require('underscore');
 var when = require('when');
 var Db = require('@saio/db-component');
 var Wsocket = require('@saio/wsocket-component');
-var netConfig = require('config/network.json');
 
-var DataBaseService = function(container, options) {
-  var dbConfig = {
+var Database = function(container, options) {
+  this.db = container.use('db', Db, {
     dialect: 'postgres',
-    user: undefined,
-    password: undefined,
-    host: 'saio-sp-db',
+    user: 'postgres',
+    password: 'password',
+    host: 'postgres',
     port: 5432,
-    dbname: undefined,
+    dbname: 'postgres',
     model: './question.js'
-  };
-  var wsConfig = {
-    url: 'ws://saio-sp-crossbar',
-    realm: 'saio-sp'
-  };
-  this.db = container.use('db', Db, dbConfig);
-  this.ws = container.use('ws', Ws, wsConfig);
-
-  this.state = 'new'; // 'new' | 'started' | 'stopped'
+  });
+  this.ws = container.use('ws', Wsocket, {
+    url: 'ws://crossbar:8080',
+    realm: 'semanticaio'
+  });
+  this.Question = this.db.model.Question;
 };
 
-DataBaseService.prototype.start = function() {
-
+Database.prototype.start = function() {
+  var pendingRegisters = [
+    this.ws.register('semanticaio.db.get', this.get.bind(this)),
+    this.ws.register('semanticaio.db.all.get', this.getAll.bind(this)),
+    this.ws.register('semanticaio.db.batch.get', this.getBatch.bind(this)),
+    this.ws.register('semanticaio.db.set', this.set.bind(this))
+  ];
+  return when.all(pendingRegisters);
 };
 
-DataBaseService.prototype.stop = function() {
-  this.state = 'stopped';
+Database.prototype.stop = function() {
   return this.ws.unregister();
 };
 
-DataBaseService.prototype.get = function(args, kwargs) {
-
+Database.prototype.get = function(args, kwargs) {
+  return this.Question.findById(kwargs.id)
+  .then(function(question) {
+    return question.get({ plain: true });
+  });
 };
 
-DataBaseService.prototype.add = function(args, kwargs) {
-
+Database.prototype.getAll = function(args, kwargs) {
+  var constraints;
+  if (kwargs.matchableOnly) {
+    constraints = { where: { matchable: true } };
+  } else if (kwargs.correctOnly) {
+    constraints = { where: { correctFormId : null } };
+  }
+  return this.Question.findAll(constraints)
+  .then(function(questions) {
+    return _.map(questions, function(question) {
+      return question.get({ plain: true });
+    });
+  });
 };
 
-DataBaseService.prototype.update = function(args, kwargs) {
-
+Database.prototype.getBatch = function(args, kwargs) {
+  var constraints = {};
+  if (kwargs.matchableOnly) {
+    constraints.where = { matchable: true };
+  } else if (kwargs.correctOnly) {
+    constraints.where = { correctFormId : null };
+  }
+  constraints.order = { raw: 'random()' }; // not sure, need test
+  constraints.limit = kwargs.size;
+  return this.Question.findAll(constraints)
+  .then(function(questions) {
+    return _.map(questions, function(question) {
+      return question.get({ plain: true });
+    });
+  });
 };
 
-DataBaseService.prototype.remove = function(args, kwargs) {
-
+Database.prototype.set = function(args, kwargs) {
+  return this.Question.findById(kwargs.id)
+  .then(function(question) {
+    return question.update(_.omit(kwargs, 'id'));
+  });
 };
 
-// custom select query
-DataBaseService.prototype.select = function(args, kwargs) {
-
-};
-
-
-
-module.exports = DataBaseService;
+module.exports = Database;

@@ -1,2 +1,4 @@
-docker rmi saio-sp-node-base
-docker rmi saio-sp-python-base
+docker rmi semanticaio-crossbar
+docker rmi semanticaio-node-base
+docker rmi semanticaio-python-base
+docker rmi semanticaio-phppgadmin

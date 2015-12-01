@@ -2,7 +2,7 @@ var _ = require('underscore');
 var when = require('when');
 var Wsocket = require('@saio/wsocket-component');
 var events = require('events');
-var semanticConfig = require('config/semantic.json');
+var semanticConfig = require('./config/semantic.json');
 
 var Controller = function(container, options) {
   var that = this;
@@ -17,17 +17,17 @@ var Controller = function(container, options) {
 
   this.eventHandler.on('encoderTrainerStarted', function() {
     that.trainerState = 'training';
-    return that.ws.publish('semanticaio.trainer.started', [], {})
+    return that.ws.publish('semanticaio.trainer.state.started', [], {})
     .tap(function() {
-      console.log('[emit] semanticaio.trainer.started');
+      console.log('[emit] semanticaio.trainer.state.started');
     });
   });
 
   this.eventHandler.on('encoderTrainerStopped', function() {
     that.trainerState = 'ready';
-    return that.ws.publish('semanticaio.trainer.stopped', [], {})
+    return that.ws.publish('semanticaio.trainer.state.stopped', [], {})
     .tap(function() {
-      console.log('[emit] semanticaio.trainer.stopped');
+      console.log('[emit] semanticaio.trainer.state.stopped');
     });
   });
 };
@@ -36,6 +36,7 @@ Controller.prototype.start = function() {
   var pendingPromises = [
     this.ws.register('semanticaio.app.state.get', this.getAppState.bind(this)),
     this.ws.register('semanticaio.trainer.state.get', this.getTrainerState.bind(this)),
+    this.ws.register('semanticaio.config.get', this.getSemanticConfig.bind(this)),
     this.ws.register('semanticaio.analyze', this.analyze.bind(this)),
     this.ws.subscribe('semanticaio.app.load', this.loadApp.bind(this)),
     this.ws.subscribe('semanticaio.trainer.load', this.loadTrainer.bind(this)),
@@ -87,11 +88,11 @@ Controller.prototype.analyze = function(args, kwargs) {
   }
 
   var result = {};
-  return this.ws.call('semanticaio.encoder.encode', [] {
+  return this.ws.call('semanticaio.encoder.encode', [], {
     question: kwargs.question,
     decode: true
   })
-  .then(function(encoderResult) {
+  .then(function(encodeResult) {
     var encoded = encodeResult.encoded;
     var decoded = encodeResult.decoded;
     console.log('    - auto-encoder output: ' + decoded);
@@ -108,9 +109,14 @@ Controller.prototype.analyze = function(args, kwargs) {
         result.classes = classes;
       }),
       that.ws.call('semanticaio.matcher.match', [], { question: encoded })
-      .tap(function(match) {
-        console.log('    - match: ' + match);
-        result.match = match;
+      .then(function(match) {
+        console.log('    - match distance: ' + match.distance);
+        result.match = { distance: match.distance };
+        return that.ws.call('semanticaio.db.get', [], { id: match.id });
+      })
+      .tap(function(question) {
+        console.log('    - match question: ' + question.sentence);
+        result.match.question = question.sentence;
       })
     ];
     return when.all(pendingPromises);
@@ -229,6 +235,7 @@ Controller.prototype.commit = function() {
     return;
   }
 
+  // state update
   this.trainerState = 'committing';
   this.appState = 'loading';
   return this.ws.publish('semanticaio.trainer.state.committing', [], {})
@@ -241,20 +248,22 @@ Controller.prototype.commit = function() {
   .tap(function() {
     console.log('[emit] semanticaio.app.state.loading');
   })
+  // save & reload encoder
   .then(function() {
     return that.ws.call('semanticaio.encoder.trainer.save', [], {});
   })
   .then(function() {
     return that.ws.call('semanticaio.encoder.load', [], {});
   })
+  // re-encode db
   .then(function() {
     return that.ws.call('semanticaio.db.all.get', [], { correctOnly: true });
   })
-  .then(function(getResult) {
-    var ids = _.map(getResult.questions, function(question) {
+  .then(function(questions) {
+    var ids = _.map(questions, function(question) {
       return question.id;
     });
-    var sentences = _.map(getResult.questions, function(question) {
+    var sentences = _.map(questions, function(question) {
       return question.sentence;
     });
     return that.ws.call('semanticaio.encoder.encode', [], {
@@ -265,12 +274,13 @@ Controller.prototype.commit = function() {
       var pendingUpdates = _.map(ids, function(id, index) {
         return that.ws.call('semanticaio.db.set', [], {
           id: id,
-          representation: encodeResult.encoded[i]
+          representation: encodeResult.encoded[index]
         });
       });
       return when.all(pendingUpdates);
     });
   })
+  // train classifier & tagger
   .then(function() {
     return when.promise(function(resolve) {
       var taggerTrained = false;
@@ -291,6 +301,7 @@ Controller.prototype.commit = function() {
       that.ws.publish('semanticaio.classifier.trainer.train', [], {});
     });
   })
+  // save classifier & tagger
   .then(function() {
     var pendingSaves = [
       that.ws.call('semanticaio.tagger.trainer.save'),
@@ -298,6 +309,7 @@ Controller.prototype.commit = function() {
     ];
     return when.all(pendingSaves);
   })
+  // reload classifier, tagger & matcher
   .then(function() {
     var pendingLoads = [
       that.ws.call('semanticaio.tagger.load'),
@@ -306,6 +318,7 @@ Controller.prototype.commit = function() {
     ];
     return when.all(pendingLoads);
   })
+  // update state
   .then(function() {
     that.appState = 'ready';
     that.trainerState = 'ready';

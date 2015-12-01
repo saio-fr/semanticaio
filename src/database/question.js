@@ -1,5 +1,5 @@
 var _ = require('underscore');
-var tags = require('config/semantic.json').tags;
+var semanticConfig = require('./config/semantic.json');
 
 module.exports = function(sequelize, DataTypes) {
   var model = {
@@ -21,15 +21,24 @@ module.exports = function(sequelize, DataTypes) {
       allowNull: true
     }
   };
-  _.each(tags, function(tag) {
+
+  _.each(semanticConfig.tags, function(tag) {
     model[tag] = {
       type: DataTypes.BOOLEAN,
-      allowNull: false
-    }
+      allowNull: true
+    };
+  });
+
+  _.each(semanticConfig.classes, function(labels, className) {
+    model[className] = {
+      type: DataTypes.ENUM.apply(null, labels),
+      allowNull: true
+    };
   });
 
   var options = {
     timestamps: false
   };
+
   return sequelize.define('Question', model, options);
 };
