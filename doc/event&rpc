@@ -92,14 +92,11 @@
     kwargs:
       question: string (optional)
       questions: [string] (optional)
-      decode: boolean
     return:
       if kwargs.question:
         encoded: [float]
-        decoded: string (if kwargs.decode)
       if kwargs.questions:
         encoded: [[float]]
-        decoded: [string] (if kwargs.decode)
 
 ** encoder trainer **
   RPC:

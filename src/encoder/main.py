@@ -1,5 +1,8 @@
 import time
 import random
+import numpy as np
+from lib.codec import Codec
+from lib.model import Model
 from asyncio import coroutine
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
@@ -7,30 +10,31 @@ class Encoder(ApplicationSession):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.codec = Codec()
+        self.model = Model('encode')
 
     def load(self, *args, **kwargs):
         print('[call] semanticaio.encoder.load')
-        time.sleep(30)
+        try :
+            self.model.load()
+        except :
+            print('[error] semanticaio.encoder.load')
+        self.model.compile()
 
+    def _encode(self, question) :
+        coded_question = np.zeros((self.codec.seq_len, self.codec.n_chars), dtype = np.bool)
+        self.codec.encode(question, coded_question)
+        return self.model.encode(coded_question).tolist()
 
     def encode(self, *args, **kwargs):
         print('[call] semanticaio.encoder.encode:', kwargs)
-        time.sleep(3)
         result = {}
-        result['encoded'] = []
         if 'question' in kwargs :
-            for char in kwargs['question']:
-                result['encoded'].append(random.random())
-            if 'decode' in kwargs and kwargs['decode'] :
-                result['decoded'] = kwargs['question']
+            result['encoded'] = self._encode(kwargs['question'])
         elif 'questions' in kwargs :
+            result['encoded'] = []
             for question in kwargs['questions'] :
-                encodedQuestion = []
-                for char in question :
-                    encodedQuestion.append(random.random())
-                result['encoded'].append(encodedQuestion)
-            if 'decode' in kwargs and kwargs['decode'] :
-                result['decoded'] = kwargs['questions']
+                result['encoded'].append(self._encode(question))
         return result
 
     @coroutine

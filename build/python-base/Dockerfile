@@ -16,7 +16,9 @@ RUN pip install keras
 RUN pip install scikit-learn
 RUN pip install autobahn[asyncio]
 
-RUN mkdir -p /opt/service
+RUN mkdir -p /opt/service/data
 WORKDIR /opt/service
 ADD config ./config
 ADD src/lib ./lib
+ADD build/python-base/__init__.py ./__init__.py
+ADD build/python-base/__init__.py ./lib/__init__.py

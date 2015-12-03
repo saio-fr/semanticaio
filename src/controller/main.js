@@ -88,34 +88,24 @@ Controller.prototype.analyze = function(args, kwargs) {
   }
 
   var result = {};
-  return this.ws.call('semanticaio.encoder.encode', [], {
-    question: kwargs.question,
-    decode: true
-  })
+  return this.ws.call('semanticaio.encoder.encode', [], { question: kwargs.question })
   .then(function(encodeResult) {
     var encoded = encodeResult.encoded;
-    var decoded = encodeResult.decoded;
-    console.log('    - auto-encoder output: ' + decoded);
-
     var pendingPromises = [
       that.ws.call('semanticaio.tagger.tag', [], { question: encoded })
       .tap(function(tags) {
-        console.log('    - tags: ' + tags);
         result.tags = tags;
       }),
       that.ws.call('semanticaio.classifier.classify', [], { question: encoded })
       .tap(function(classes) {
-        console.log('    - classes: ' + classes);
         result.classes = classes;
       }),
       that.ws.call('semanticaio.matcher.match', [], { question: encoded })
       .then(function(match) {
-        console.log('    - match distance: ' + match.distance);
         result.match = { distance: match.distance };
         return that.ws.call('semanticaio.db.get', [], { id: match.id });
       })
       .tap(function(question) {
-        console.log('    - match question: ' + question.sentence);
         result.match.question = question.sentence;
       })
     ];
@@ -266,10 +256,7 @@ Controller.prototype.commit = function() {
     var sentences = _.map(questions, function(question) {
       return question.sentence;
     });
-    return that.ws.call('semanticaio.encoder.encode', [], {
-      questions: sentences,
-      decode: false
-    })
+    return that.ws.call('semanticaio.encoder.encode', [], { questions: sentences })
     .then(function(encodeResult) {
       var pendingUpdates = _.map(ids, function(id, index) {
         return that.ws.call('semanticaio.db.set', [], {

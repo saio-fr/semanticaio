@@ -83,6 +83,11 @@
 - pas de distinction entreprise, global etc
 - tags & feature dim static
 
+** for now **
+- no tags
+- only one classification: vente | support | contact | paiement
+- no db -> use google drive & csv export
+
 ** TODO **
 - load/save db content -> use docker volume: /var/lib/postgresql/data
 - docker volume for weights -> /opt/data/encoder or tagger

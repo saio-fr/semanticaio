@@ -1,5 +1,5 @@
 {
-  "vectorDim": 512,
+  "vectorDim": 128,
   "seqLength": 200,
   "tags": ["tag0", "tag1", "tag2"],
   "classes": {
