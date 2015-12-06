@@ -10,18 +10,14 @@
 
   - semanticaio.config.get
     return: {
-      tags: [string],
-      classes: {
-        <classificationName>: [string]
-      }
+      classes: [string]
     }
 
   - semanticaio.analyze
     kwargs:
       {question: string}
     return: {
-      tags: {<tagName>: boolean},
-      classes: {<className>: <label>},
+      class: string,
       match: { question: string, distance: float}
     }
 
@@ -29,6 +25,8 @@
   - semanticaio.app.load
   - semanticaio.trainer.load (load only possible if trainer state is 'new' or 'ready')
   - semanticaio.trainer.start
+    kwargs:
+      pretrain: Boolean (optional, default: False)
   - semanticaio.trainer.stop
   - semanticaio.trainer.commit (note: commit => reload app)
 
@@ -45,44 +43,6 @@
   - semanticaio.trainer.state.stopped
   - semanticaio.trainer.state.committing
   - semanticaio.trainer.state.committed
-
-
-** database **
-  RPC:
-  - semanticaio.db.get
-    kwargs:
-      {id: int}
-    return:
-      Question
-
-  - semanticaio.db.all.get
-    kwargs: {
-      correctOnly: boolean (optional, default false)
-      matchableOnly: boolean (optional, false => all questions matchable or not, default false)
-    }
-    return:
-      [Question]
-
-  - semanticaio.db.batch.get
-    kwargs: {
-      size: int
-      correctOnly: boolean (optional)
-      matchableOnly: boolean (optional)
-    }
-    return:
-      [Question] (random batch)
-
-  - semanticaio.db.set
-    kwargs: {
-      id: int
-      <column to set>: <value>
-    }
-
-  (TODO later - semanticaio.db.add
-    kwargs <=> Question
-
-  - semanticaio.db.remove
-    kwargs: {id: int})
 
 ** encoder **
   RPC:
@@ -113,7 +73,9 @@
 
   Subscribed Events:
   - semanticaio.encoder.trainer.start
-    (TODO later - kwargs:
+    kwargs:
+      pretrain: Boolean (optional, default: False)
+    (TODO later:
       nQuestions: int (optional), stop after nQuestions trained
       objectiveAccuracy: float (optional), stop after objectiveAccuracy reached
       time: int (optional), stop after a number of seconds)
@@ -129,28 +91,6 @@
       loss: float (last batch loss)
       accuracy: float (last batch accuracy)
       nQuestions: int)
-
-** tagger **
-  RPC:
-  - semanticaio.tagger.load
-
-  - semanticaio.tagger.tag
-    kwargs:
-      question: [float]
-    return:
-      <tag>: boolean
-
-** tagger trainer ** (full db one-hot training over correct questions because svm used)
-  RPC:
-  - semanticaio.tagger.trainer.load
-
-  - semanticaio.tagger.trainer.save
-
-  Subscribed Events:
-  - semanticaio.tagger.trainer.train
-
-  Published Events:
-  - semanticaio.tagger.trainer.trained
 
 ** classifier **
   RPC:
@@ -182,5 +122,6 @@
     kwargs:
       question: [float]
     return:
-      id: int of closest question
+      id: int of closest question,
+      question: string
       distance: float

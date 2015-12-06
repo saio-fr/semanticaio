@@ -1,41 +1,44 @@
-import time
 import asyncio
 import numpy as np
+from lib import data_util
 from lib.codec import Codec
-from lib.model import Model
+from lib.encoder_model import Model
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
 class EncoderTrainer(ApplicationSession):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.batch_size = 2
+        self.semantic_config = data_util.get_config()
+        self.batch_size = self.semantic_config['trainBatchSize']
         self.needStop = False
         self.codec = Codec()
         self.model = Model('train')
 
     @asyncio.coroutine
-    def train(self):
+    def train(self, pretrain):
         self.publish('semanticaio.encoder.trainer.started')
         print('[emit] semanticaio.encoder.trainer.started')
-        input_dataset = np.zeros((self.batch_size, self.codec.seq_len, self.codec.n_chars), dtype = np.bool)
-        output_dataset = np.zeros((self.batch_size, self.codec.seq_len, self.codec.n_chars), dtype = np.bool)
-        while not self.needStop :
-            yield from asyncio.sleep(0.1)
-            batch = yield from self.call('semanticaio.db.batch.get', size = self.batch_size)
-            for i, question in enumerate(batch) :
-                self.codec.encode(question['sentence'], input_dataset[i])
-                if question['correctFormId'] == None :
-                    self.codec.encode(question['sentence'], output_dataset[i])
-                else :
-                    correctQuestion = yield from self.call('semanticaio.db.get', id = question['correctFormId'])
-                    self.codec.encode(correctQuestion['sentence'], output_dataset[i])
-            (loss, accuracy) = self.model.train(input_dataset, output_dataset)
-            print('training:', loss, accuracy)
+        yield from asyncio.sleep(0.1)
+        data_path = ''
+        if pretrain :
+            data_path = self.semantic_config['path']['data']['pretrainSelectedQuestions']
+        else :
+            data_path = self.semantic_config['path']['data']['questions']
 
-        self.needStop = False
-        self.publish('semanticaio.encoder.trainer.stopped')
-        print('[emit] semanticaio.encoder.trainer.stopped')
+        while True :
+            for batch in data_util.batch_read(data_path, self.batch_size, randomize = True) :
+                dataset = np.zeros((len(batch), self.codec.seq_len, self.codec.n_chars), dtype = np.bool)
+                for i, question in enumerate(batch) :
+                    self.codec.encode(question, dataset[i])
+                (loss, accuracy) = self.model.train(dataset, dataset)
+                print('training:', loss, accuracy)
+                yield from asyncio.sleep(0.1)
+                if self.needStop :
+                    self.needStop = False
+                    self.publish('semanticaio.encoder.trainer.stopped')
+                    print('[emit] semanticaio.encoder.trainer.stopped')
+                    return
 
     def load(self, *args, **kwargs):
         print('[call] semanticaio.encoder.trainer.load')
@@ -52,7 +55,8 @@ class EncoderTrainer(ApplicationSession):
     @asyncio.coroutine
     def start(self, *args, **kwargs):
         print('[event received] semanticaio.encoder.trainer.start')
-        yield from self.train()
+        pretrain = 'pretrain' in kwargs and kwargs['pretrain']
+        yield from self.train(pretrain)
 
     def stop(self, *args, **kwargs):
         print('[event received] semanticaio.encoder.trainer.stop')

@@ -1,8 +1,0 @@
-Question:
-  id: string
-  sentence: string
-  correctFormId: string (id) or null
-  <tag>: boolean (only for correct/matchable questions)
-  <class>: string (class value) (only for correct/matchable questions)
-  representation: array (json) (only for correct/matchable questions)
-  matchable: boolean (only correct questions can be matchable)

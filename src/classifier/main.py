@@ -1,4 +1,4 @@
-import time
+from lib.classifier_model import Model
 from asyncio import coroutine
 from autobahn.asyncio.wamp import ApplicationSession, ApplicationRunner
 
@@ -6,18 +6,23 @@ class Classifier(ApplicationSession):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.model = Model()
 
-    def load(*args, **kwargs):
+    def load(self, *args, **kwargs):
         print('[call] semanticaio.classifier.load')
-        time.sleep(30)
+        try:
+            self.model.load()
+        except Exception as e:
+            print('[error] semanticaio.classifier.load', e)
 
-    def classify(*args, **kwargs):
+    def classify(self, *args, **kwargs):
         print('[call] semanticaio.classifier.classify:', kwargs)
-        time.sleep(3)
-        result = {}
-        result['class0'] = 'label0'
-        result['class1'] = 'label1'
-        return result
+        try:
+            result = {}
+            result['class'] = self.model.predict(kwargs['question'])
+            return result
+        except Exception as e:
+            print('[error] semanticaio.classifier.classify', e)
 
     @coroutine
     def onJoin(self, details):

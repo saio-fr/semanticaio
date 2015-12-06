@@ -1,5 +1,5 @@
 import numpy as np
-import json
+from .data_util import get_config
 
 # encoding:
 # - [1, 99 (n_chars - 2)]: known chars
@@ -10,9 +10,7 @@ class Codec():
     def __init__(self):
         chars = 'AaàâBbCcçDdEeéèêëFfGgHhIiîïJjKkLlMmNnOoôPpQqRrSsTtUuùûüVvWwXxYyZz0123456789 ,.?():;!&-+*/\\_"\'#@%€$£'
         self.n_chars = Codec.n_chars
-        with open('config/semantic.json') as file :
-            semantic_config = json.load(file)
-            self.seq_len = semantic_config['seqLength']
+        self.seq_len = get_config()['seqLength']
         self.char_index = dict((c, i + 1) for i, c in enumerate(chars))
         self.index_char = dict((i + 1, c) for i, c in enumerate(chars))
 

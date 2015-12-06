@@ -1,94 +1,44 @@
-** ARCHITECTURE **
-- front-office web:
-    - input: question
-    - output: encoded then decoded, tags, matching
-
-- back-office web:
-    - training start / pause / save / stop (conditional stop, ie accuracy threshold)
-        - for each part: ie train all, tagger only, one tag only
-    - front update (ie restart) -> note need retraining tagger if encoder updated
-    - training monitoring (accuracy, timing)
-    - current component score monitoring
-    - tag add/rm/rename -> static better
-    - data view/add/rm/update
-
-    - start/stop service
-    - commit training (=> need check if encoder changed or not)
-    - evaluate training
-
-- database:
-    Questions:
-      id: string
-      sentence: string
-      correctFormId: string (id) or null
-      <tag>: boolean
-      <class>: string (class value)
-      representation: array (json maybe)
-      matchable: boolean
-
-    RPC:
-      random batch (with option to select a particular not null tag, or several)
-      random ordered full read ?
-      add/get(id/all)/set/remove(id)
-
-- crossbar:
-
-- encoder (+ decoder):
-    weight paths:
-      encoder: (/opt/service/)data/encoder/encoderWeights
-      decoder: (/opt/service/)data/encoder/decoderWeights
-    RPC:
-      encode/decode (unique/batch)
-      (re)load model
-      get status
-    Events:
-      status update (loading/ready)
-
-- encoder trainer:
-    RPC:
-      train start/stop
-      load/save
-      get status
-    Events:
-      status update (idle/loading/training/saving)
-
-- tagger:
-    RPC:
-      tag (unique/batch)
-      (re)load model(tag name)
-      get status
-    Events:
-      status update (loading/ready)
-
-- tagger trainer:
-    RPC:
-      train for each tag (emit event when done)
-      load/save
-      get status
-    Events:
-      status update (idle/loading/training/saving)
-
-- matcher:
-
-- controller:
-    RPC:
-      full analysis (encode, tag, match)
-      train start/stop/commit
-      - commit (after encoder training stopped)
-        => train classifier & tagger
-        => save & reload encoder/classifier/tagger
-        => encode all db for matcher
-
 ** GLOBAL NOTES **
 - pas de distinction entreprise, global etc
-- tags & feature dim static
+- pas de correction orthographique
 
 ** for now **
 - no tags
 - only one classification: vente | support | contact | paiement
-- no db -> use google drive & csv export
+- no db -> use google sheet & csv export
 
 ** TODO **
-- load/save db content -> use docker volume: /var/lib/postgresql/data
-- docker volume for weights -> /opt/data/encoder or tagger
-- init case: en particulier pour le matcher (no representation?!, init with zeros?)
+- code classifier & matcher
+- add subtitles file (&& build it with good seqLength filter, for now it's 300, goto 200)
+
+** data **
+classifier: data/classifier/classifier.pkl
+  -> built @ classifier.save
+encoder: data/encoder/encoder.hdf5[/layer_<i> & /n_layers] && data/encoder/decoder.hdf5[<same>]
+  -> built @ encoder-trainer.save
+raw csv: data/db/questions.csv
+raw text questions: data/db/questions.txt
+  -> built @ import
+raw text questions for pre-train : data/db/subtitles.txt
+classes: data/db/classes.hdf5[/data]
+  -> built @ import
+encoded questions: data/db/encoded_questions.hdf5[/data]
+  -> built @ encoder.load & import
+
+** be careful **
+when importing don't save or load components (import component not linked to controller => no state control)
+
+** bugfix ** (in import)
+
+Traceback (most recent call last):
+  File "main.py", line 22, in <module>
+    data_util.import_data()
+  File "/opt/service/lib/data_util.py", line 23, in import_data
+    n_questions = count_lines(csv_path) - 1
+  File "/opt/service/lib/data_util.py", line 11, in count_lines
+    return sum(1 for line in file)
+  File "/opt/service/lib/data_util.py", line 11, in <genexpr>
+    return sum(1 for line in file)
+  File "/root/miniconda3/lib/python3.5/encodings/ascii.py", line 26, in decode
+    return codecs.ascii_decode(input, self.errors)[0]
+UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 in position 108: ordinal not in range(128)

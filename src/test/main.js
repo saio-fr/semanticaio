@@ -15,9 +15,10 @@ var Test = function(container, options) {
  * load app
  * analyze
  * load trainer
- * start trainer
+ * start trainer (pretrain mode)
  * wait (long time)
  * stop trainer
+ * repeat without pretrain mode
  * commit
  * analyze
  */
@@ -63,7 +64,7 @@ Test.prototype.start = function() {
 
   // analyze
   .then(function() {
-    var question = 'test question ?';
+    var question = 'J\'ai perdu mon mot de passe';
     console.log('call analyze:', question);
     return that.ws.call('semanticaio.analyze', [], { question: question })
     .tap(function(analysis) {
@@ -84,6 +85,40 @@ Test.prototype.start = function() {
     })
     .tap(function() {
       console.log('trainer loaded');
+    });
+  })
+
+  // start trainer (pretrain on)
+  .then(function() {
+    return when.promise(function(resolve) {
+      return that.ws.subscribe('semanticaio.trainer.state.started', resolve)
+      .then(function() {
+        return that.ws.publish('semanticaio.trainer.start', [], { pretrain: true });
+      });
+    })
+    .then(function() {
+      return that.ws.unsubscribe('semanticaio.trainer.state.started');
+    })
+    .tap(function() {
+      console.log('trainer started');
+    });
+  })
+
+  .delay(90000)
+
+  // stop trainer
+  .then(function() {
+    return when.promise(function(resolve) {
+      return that.ws.subscribe('semanticaio.trainer.state.stopped', resolve)
+      .then(function() {
+        return that.ws.publish('semanticaio.trainer.stop');
+      });
+    })
+    .then(function() {
+      return that.ws.unsubscribe('semanticaio.trainer.state.stopped');
+    })
+    .tap(function() {
+      console.log('trainer stopped');
     });
   })
 
@@ -139,7 +174,7 @@ Test.prototype.start = function() {
 
   // analyze
   .then(function() {
-    var question = 'test question ?';
+    var question = 'J\'ai perdu mon mot de passe';
     console.log('call analyze:', question);
     return that.ws.call('semanticaio.analyze', [], { question: question })
     .tap(function(analysis) {

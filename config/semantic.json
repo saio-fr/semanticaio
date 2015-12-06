@@ -1,10 +1,22 @@
 {
   "vectorDim": 128,
   "seqLength": 200,
-  "tags": ["tag0", "tag1", "tag2"],
-  "classes": {
-    "class0": ["label0", "label1"],
-    "class1": ["label0", "label1"]
-  },
-  "maxMatchDist": 0.42
+  "maxMatchDist": 0.42,
+  "trainBatchSize": 2,
+  "classes": ["vente", "support", "contact", "paiement"],
+  "path": {
+    "data": {
+      "csv": "data/db/questions - Feuille 1.csv",
+      "questions": "data/db/questions.txt",
+      "pretrainQuestions": "data/db/subtitles.txt",
+      "pretrainSelectedQuestions": "data/db/selected_subtitiles.txt",
+      "classes": "data/db/classes.hdf5",
+      "encoded": "data/db/encoded.hdf5"
+    },
+    "model": {
+      "classifier": "data/classifier/model.pkl",
+      "encoder": "data/encoder/encoder.hdf5",
+      "decoder": "data/encoder/decoder.hdf5"
+    }
+  }
 }

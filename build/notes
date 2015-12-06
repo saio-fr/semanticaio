@@ -1,23 +1,29 @@
-1) install: (ok)
-- build node-base, python-base & crossbar
+1) install:
+- build node-base, python-base, import & crossbar
 
 2) start-env: (ok)
-- start crossbar, postgres & phppgadmin (with volumes & links)
+- start crossbar
 
-3) build: (ok)
-- build database, encoder (+trainer), classifier (+trainer), tagger (+trainer), matcher, controller
+3) import: (can be done anytime & several times between 2 & 8)
+- start/stop/rm import image
 
-4) start:
-- start containers of images of step 3 (with volumes & links)
+4) build: (ok)
+- build encoder (+trainer), classifier (+trainer), matcher, controller
 
-4) stop:
-- stop & rm containers of step 4 (& rm volumes)
+5) start:
+- start containers of images of step 4 (with volumes & links)
 
-5) unbuild: (ok)
-- rm images of step 3
+5.1) run-test
+5.2) clean-test
 
-6) stop-env: (ok)
-- stop & rm containers of step 2 (& rm volumes)
+6) stop:
+- stop & rm containers of step 5 (& rm volumes)
 
-7) uninstall: (ok)
+7) unbuild: (ok)
+- rm images of step 4
+
+8) stop-env: (ok)
+- stop & rm containers of step 3 (& rm volumes)
+
+9) uninstall: (ok)
 - rm images of step 1
